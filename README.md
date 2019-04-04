@@ -1,9 +1,9 @@
 # Colectivos de Buenos Aires
 
-Trabajo Práctico de Base de Datos (FIUBA), Grupo L3.
+Trabajo Práctico de Base de Datos (75.15-FIUBA), Grupo L3.
 
 Integrantes:
 
 - Tomás Arjovsky
-- Jazmin Ferreiro
+- Jazmín Ferreiro
 - Eunice Lewczuk
