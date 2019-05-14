@@ -52,18 +52,15 @@ on ( p.linea = r.linea)
 select * from paradas_por_recorrido limit 5
 
 
-
 create or replace function colectivos_a_utilizar(origen geometry, destino geometry, max_distancia float)
   returns table (
     calle_origen varchar,
     altura_origen int,
-    distancia_origen float,
     linea int,
     ramal varchar,
     sentido varchar,
     calle_destino varchar,
-    altura_destino int,
-    distancia_destino float)
+    altura_destino int)
   as $$
   declare
     metros_por_grado constant float := 111000;
@@ -76,10 +73,9 @@ create or replace function colectivos_a_utilizar(origen geometry, destino geomet
 		select *, ST_Distance(destino, coords)*metros_por_grado as distancia_destino
 		from paradas_por_recorrido
         )
-        select o.calle as calle_origen , o.altura as altura_origen, o.distancia_origen, 
+        select o.calle as calle_origen , o.altura as altura_origen,
         o.linea, o.ramal, o.sentido,
-        d.calle as calle_destino, d.altura as altura_destino, d.distancia_destino
-		
+        d.calle as calle_destino, d.altura as altura_destino
         from o
         inner join d
         on o.linea = d.linea
@@ -92,4 +88,7 @@ language 'plpgsql';
 
 --colectivos que me llevan a mi casa desde la facu
 select *
-from colectivos_a_utilizar(ST_MakePoint(-34.617454, -58.368293), ST_MakePoint(-34.581750, -58.407540),500);
+from colectivos_a_utilizar(
+ST_SetSRID(ST_MakePoint(-34.617454, -58.368293),4326), 
+ST_SetSRID(ST_MakePoint(-34.581750, -58.407540),4326),
+500);
