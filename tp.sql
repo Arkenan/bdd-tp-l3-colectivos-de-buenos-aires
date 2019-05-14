@@ -47,6 +47,9 @@ from paradas_raw p
 inner join lineas_raw l
 on p.id_parada = l.id_parada
 
+select * from paradas limit 5
+
+
 DROP FUNCTION IF EXISTS  paradas_cercanas
 -- Devuelve las paradas a menos de max_distancia respecto de la parada_objetivo.
 create or replace function paradas_cercanas(parada_objetivo geometry, max_distancia float)
