@@ -26,13 +26,19 @@ DELIMITER ','
 CSV HEADER encoding 'latin1';
 
 --modificamos la columna wkt de tipo text a tipo linestring
-ALTER TABLE recorridos ALTER COLUMN wkt TYPE geometry USING ST_SetSRID((wkt::GEOMETRY), 4326);
+--ALTER TABLE recorridos ALTER COLUMN wkt TYPE geometry USING ST_SetSRID((wkt::GEOMETRY), 4326);
 
 select * from recorridos limit 5;
 
-ALTER TABLE paradas ALTER COLUMN coords TYPE geometry USING ST_SetSRID((coords::GEOMETRY), 4326);
+--ALTER TABLE paradas ALTER COLUMN coords TYPE geometry USING ST_SetSRID((coords::GEOMETRY), 4326);
 
-select * from paradas limit 5;
+create table paradas2 as
+select p.id_parada, latitud, longitud, calle, altura, linea 
+from paradas_raw p
+inner join lineas_raw l
+on p.id_parada = l.id_parada
+
+select * from paradas2 limit 5;
 
 
 select p.linea,ST_Intersects(p.coords, r.wkt) as point_inside_line, ST_GeometryType(p.coords), ST_GeometryType(r.wkt)
@@ -41,13 +47,22 @@ inner join recorridos r
 on ( p.linea = r.linea )
 limit 5
 
+--probamos la funcion intersects
+SELECT ST_Intersects(
+		ST_GeographyFromText('SRID=4326;LINESTRING(-43.23456 72.4567,-43.23456 72.4568)'),
+		ST_GeographyFromText('SRID=4326;POINT(-43.23456 72.4567772)')
+		);
+
 drop table paradas_por_recorrido;
 create table paradas_por_recorrido as
-select id_parada, coords, calle, altura, p.linea, wkt, ramal,sentido
-from paradas p
+select id_parada, latitud, longitud, calle, altura, p.linea, wkt, ramal, sentido
+from paradas2 p
 inner join recorridos r
---on ST_Intersects(p.coords, r.wkt)
-on ( p.linea = r.linea)
+on ST_Intersects(
+		ST_GeographyFromText(concat('SRID=4326;',wkt)),
+		ST_GeographyFromText(concat('SRID=4326;POINT(',latitud,' ',longitud,')'))
+		)
+--on (p.linea = r.linea)
 
 select * from paradas_por_recorrido limit 5
 
