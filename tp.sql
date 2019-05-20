@@ -38,19 +38,27 @@ CSV HEADER;
 select * from lineas_raw limit 5;
 
 
+drop table paradas
 -- Creamos una tabla con las los puntos correspondientes a cada parada.
--- Google maps representa las coordenadas como (Latitud, Longitud), orden inverso al
--- de la ciudad. Representaremos nuestras paradas con esa convención.
+-- Google maps representa las coordenadas como (Latitud, Longitud) ~(-58,-34) 
+-- Nosotros usaremos el orden inverso porque es el que esta en los linestring 
+
 create table paradas as
-select p.id_parada, ST_MakePoint(latitud, longitud) as coords , calle, altura, linea 
+select p.id_parada, calle, altura, linea, latitud, longitud, ST_MakePoint(longitud, latitud) as point,
+									Geography(
+										ST_Transform(
+											ST_SetSrid(ST_MakePoint(longitud, latitud),4326),
+											4326)
+										) as coords
 from paradas_raw p
 inner join lineas_raw l
 on p.id_parada = l.id_parada
 
-select * from paradas limit 5
+select * from paradas limit 5;
+		
 
 
-DROP FUNCTION IF EXISTS  paradas_cercanas
+DROP FUNCTION IF EXISTS  paradas_cercanas;
 -- Devuelve las paradas a menos de max_distancia respecto de la parada_objetivo.
 create or replace function paradas_cercanas(parada_objetivo geometry, max_distancia float)
   returns table (
@@ -59,12 +67,10 @@ create or replace function paradas_cercanas(parada_objetivo geometry, max_distan
     distancia float,
     linea int)
   as $$
-  declare
-    metros_por_grado constant float := 111000;
   begin
       return query
 	with c as (
-          select *, ST_Distance(parada_objetivo, coords)*metros_por_grado as distancia
+          select *, ST_Distance(Geography(ST_Transform(ST_SetSrid(parada_objetivo,4326),4326)), coords) as distancia
 	  from paradas
         )
         select c.calle, c.altura, c.distancia, c.linea
@@ -77,4 +83,5 @@ language 'plpgsql';
 
 -- Las paradas a menos de 200 metros de FIUBA (PC).
 -- Las coordenadas de FIUBA fueron obtenidas de Google Maps.
-select calle, altura, linea from paradas_cercanas(ST_MakePoint(-34.617454, -58.368293), 200);
+select calle, altura, linea from paradas_cercanas(ST_MakePoint(-58.368293,-34.617454), 200.0);
+
