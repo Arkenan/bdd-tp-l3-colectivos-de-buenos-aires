@@ -1,4 +1,4 @@
-﻿-- Importamos las librerías de postgis.
+-- Importamos las librerías de postgis.
 CREATE EXTENSION postgis;
 CREATE EXTENSION postgis_topology;
 
@@ -12,51 +12,43 @@ create table paradas_raw (
 );
 
 COPY paradas_raw
-FROM '/home/jazminferreiro/jaz/fiuba/baseDeDatos/tp/bdd-tp/datasets/paradas-de-colectivo-clean.csv'
---FROM '/home/tomas/Desktop/BDD/TP/datasets/paradas-de-colectivo-clean.csv'
-DELIMITER ',' 
+-- FROM '/home/jazminferreiro/jaz/fiuba/baseDeDatos/tp/bdd-tp/datasets/paradas-de-colectivo-clean.csv'
+FROM '/home/tomas/FIUBA/BDD/tp/datasets/paradas-de-colectivo-clean.csv'
+NULL 'S/N'
+DELIMITER ','
 CSV HEADER;
 
-
--- Observamos el contenido de las primeras filas de paradas.
-select * from paradas_raw limit 5;
-
-
-
+drop table lineas_raw;
 create table lineas_raw (
 	linea int not null,
 	id_parada int references paradas_raw(id_parada),
 	primary key(linea, id_parada));
 
-
 COPY lineas_raw
-FROM '/home/jazminferreiro/jaz/fiuba/baseDeDatos/tp/bdd-tp/datasets/lineas-por-paradas-clean.csv'
-DELIMITER ',' 
+-- FROM '/home/jazminferreiro/jaz/fiuba/baseDeDatos/tp/bdd-tp/datasets/lineas-por-paradas-clean.csv'
+FROM '/home/tomas/FIUBA/BDD/tp/datasets/lineas-por-paradas-clean.csv'
+DELIMITER ','
 CSV HEADER;
 
 -- Observamos el contenido de las primeras filas de lineas.
 select * from lineas_raw limit 5;
 
 
-drop table paradas
+drop table paradas;
 -- Creamos una tabla con las los puntos correspondientes a cada parada.
--- Google maps representa las coordenadas como (Latitud, Longitud) ~(-58,-34) 
--- Nosotros usaremos el orden inverso porque es el que esta en los linestring 
+-- Google maps representa las coordenadas como (Latitud, Longitud) ~(-58,-34)
+-- Nosotros usaremos el orden inverso porque es el que esta en los linestring
 
 create table paradas as
 select p.id_parada, calle, altura, linea, latitud, longitud, ST_MakePoint(longitud, latitud) as point,
-									Geography(
-										ST_Transform(
-											ST_SetSrid(ST_MakePoint(longitud, latitud),4326),
-											4326)
-										) as coords
+	Geography(
+		ST_Transform(
+			ST_SetSrid(ST_MakePoint(longitud, latitud),4326),
+			4326)
+		) as coords
 from paradas_raw p
 inner join lineas_raw l
-on p.id_parada = l.id_parada
-
-select * from paradas limit 5;
-		
-
+on p.id_parada = l.id_parada;
 
 DROP FUNCTION IF EXISTS  paradas_cercanas;
 -- Devuelve las paradas a menos de max_distancia respecto de la parada_objetivo.
@@ -79,13 +71,9 @@ create or replace function paradas_cercanas(parada_objetivo geometry, max_distan
   end; $$
 language 'plpgsql';
 
-
-
 -- Las paradas a menos de 200 metros de FIUBA (PC).
 -- Las coordenadas de FIUBA fueron obtenidas de Google Maps.
 select calle, altura, linea from paradas_cercanas(ST_MakePoint(-58.368293,-34.617454), 200.0);
-
-
 
 --drop function viajar_con_2_colectivos;
 create or replace function viajar_con_2_colectivos(origen geometry, destino geometry, max_distancia float)
@@ -110,28 +98,28 @@ create or replace function viajar_con_2_colectivos(origen geometry, destino geom
 			select distinct linea from paradas where ST_Distance(Geography(origen), coords) < max_distancia
 		) group by linea, ramal, sentido, coords, porcentaje_parada_en_recorrido
 	), p2 as (
-		select linea, ramal, sentido, coords, porcentaje_parada_en_recorrido 
-		from paradas_por_recorrido 
+		select linea, ramal, sentido, coords, porcentaje_parada_en_recorrido
+		from paradas_por_recorrido
 		where linea in (
 			select distinct linea from paradas where ST_Distance(Geography(destino), coords) < max_distancia
 		) group by linea, ramal, sentido, coords, porcentaje_parada_en_recorrido
 	), o as (
-		select distinct calle as calle_origen, altura as altura_origen, linea, ramal, sentido, porcentaje_parada_en_recorrido 
-		from paradas_por_recorrido 
+		select distinct calle as calle_origen, altura as altura_origen, linea, ramal, sentido, porcentaje_parada_en_recorrido
+		from paradas_por_recorrido
 		where ST_Distance(Geography(origen), coords) < max_distancia
 	), d as (
 		select distinct calle as calle_destino, altura as altura_destino, linea, ramal, sentido, porcentaje_parada_en_recorrido
-		from paradas_por_recorrido 
+		from paradas_por_recorrido
 		where ST_Distance(Geography(destino), coords) < max_distancia
 	)
-	select distinct o.calle_origen, o.altura_origen, p1.linea as linea1, p1.ramal as ramal1, p1.sentido as sentido1, 
+	select distinct o.calle_origen, o.altura_origen, p1.linea as linea1, p1.ramal as ramal1, p1.sentido as sentido1,
 		d.calle_destino, d.altura_destino, p2.linea as linea2, p2.ramal as ramal2, p2.sentido as sentido2
-	from p1 
-	inner join p2 
+	from p1
+	inner join p2
 	on (p1.linea != p2.linea)
-	inner join o 
+	inner join o
 	on (o.linea = p1.linea and o.ramal = p1.ramal and o.sentido = p1.sentido)
-	inner join d 
+	inner join d
 	on (d.linea = p2.linea and d.ramal = p2.ramal and d.sentido = p2.sentido)
 	where ST_Distance(p1.coords, p2.coords) < max_distancia
 	and o.porcentaje_parada_en_recorrido < p1.porcentaje_parada_en_recorrido

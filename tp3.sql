@@ -51,12 +51,19 @@ where linea = 60
 	
 -- La parada 1001996 está en LMC al 1395 (Esquina zabala). Solo los ramales que pasan por LMC deberían pasar por esa.
 
-select count(distinct(ramal)) 
+select  * 
 from paradas_por_recorrido
-where linea = 60;
+where linea = 60 and ramal = 'RAMAL C';
+
+select * from paradas where linea = 60;
 
 -- El 60 tiene 15 ramales.
 
+select count(distinct(ramal))
+from paradas_por_recorrido
+where linea = 60;
+
+-- 12 de esos ramales pasan por Luis María Campos.
 select id_parada, count(distinct(ramal)) 
 from paradas_por_recorrido
 where 
@@ -64,5 +71,21 @@ where
 	and calle like '%CAMPOS%' 
 group by id_parada
 
+select id_parada, count(distinct(ramal)) 
+from paradas_por_recorrido
+where 
+	linea = 60 
+	and upper(calle) like '%CABILDO%' 
+group by id_parada
+
+
+select id_parada, count(distinct(ramal)) 
+from paradas_por_recorrido
+where 
+	linea = 60
+group by id_parada
+
+
+select * from paradas where linea = 60 and upper(calle) like '%CABILDO%'
 -- Esto nos muestra que los 15 ramales del 60 pasan por las paradas de Luis María Campos. 
 -- Eso significa indefectiblemente que tenemos un problema en el armado de paradas_por_recorrido.
