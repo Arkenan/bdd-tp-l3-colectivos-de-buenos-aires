@@ -1,20 +1,21 @@
--- Importamos las librerías de postgis.
+﻿-- Importamos las librerías de postgis.
 CREATE EXTENSION postgis;
 CREATE EXTENSION postgis_topology;
 
+drop table paradas_raw cascade
 --- El CSV limpio del mapa de la ciudad tiene coordenadas X, Y (longitud, latitud).
 create table paradas_raw (
 	id_parada bigint primary key,
 	longitud float,
 	latitud float,
 	calle varchar,
-	altura int
+	altura int,
+	dire varchar
 );
 
 COPY paradas_raw
--- FROM '/home/jazminferreiro/jaz/fiuba/baseDeDatos/tp/bdd-tp/datasets/paradas-de-colectivo-clean.csv'
-FROM '/home/tomas/FIUBA/BDD/tp/datasets/paradas-de-colectivo-clean.csv'
-NULL 'S/N'
+FROM '/home/jazminferreiro/jaz/fiuba/baseDeDatos/tp/bdd-tp/datasets/paradas-de-colectivo-clean.csv'
+--FROM '/home/tomas/FIUBA/BDD/tp/datasets/paradas-de-colectivo-clean.csv'
 DELIMITER ','
 CSV HEADER;
 
