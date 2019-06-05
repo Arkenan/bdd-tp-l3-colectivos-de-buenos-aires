@@ -1,4 +1,4 @@
----ENUNCIADO
+﻿---ENUNCIADO
 ---2 – Colectivo a utilizar
 ---En base a dos posiciones (dadas como geometrías de tipo POINT), una de origen y otra de
 ---destino, indicar qué colectivos llevan de una ubicación a otra. Se deberá devolver el número

@@ -1,4 +1,4 @@
--- Punto 3. Ramales de Parada.
+﻿-- Punto 3. Ramales de Parada.
 
 -- En base a una línea de colectivo (dada como número de colectivo), analizar qué paradas del
 -- mismo no son recorridas por todos los ramales del colectivo. Devolver calle, número de la
@@ -89,3 +89,96 @@ group by id_parada
 select * from paradas where linea = 60 and upper(calle) like '%CABILDO%'
 -- Esto nos muestra que los 15 ramales del 60 pasan por las paradas de Luis María Campos. 
 -- Eso significa indefectiblemente que tenemos un problema en el armado de paradas_por_recorrido.
+
+
+select * from paradas where linea = 60 
+and (upper(calle) ilike '%CABILDO%' OR upper(dire) ilike '%CABILDO%')
+
+select* from paradas where id_parada=20427
+
+--------------------------------------------------------------------------------------------
+---la idea es hacer una division donde el requisito sean los ramales de la linea
+
+drop table lineas_por_parada;
+--- El CSV limpio del mapa de la ciudad tiene coordenadas X, Y (longitud, latitud).
+create table lineas_por_parada (
+	dire varchar,
+	linea integer,
+	stop_id bigint,
+	primary key(stop_id,linea)
+);
+
+COPY lineas_por_parada
+FROM '/home/jazminferreiro/jaz/fiuba/baseDeDatos/tp/bdd-tp/datasets/lineas_por_parada.csv'
+DELIMITER ','
+CSV HEADER;
+
+SELECT * FROM lineas_por_parada limit 5
+
+SELECT * FROM paradas_por_recorrido limit 5
+
+create table ramal_por_parada as
+SELECT l.linea, stop_id, dire, ramal FROM
+lineas_por_parada l
+inner join paradas_por_recorrido r
+on r.id_parada = l.stop_id
+
+SELECT * FROM ramal_por_parada limit 5
+
+--tomo todas las paradas de la lina 60
+SELECT stop_id
+from ramal_por_parada 
+where linea = 60
+
+--tomo todos los ramales de la linea 60
+SELECT distinct ramal
+from ramal_por_parada 
+where linea = 60
+
+--aquellas paradas que son recorridas por todos los ramales
+--todas las paradas para las cuales no existe un ramal de la linea 60 para el cual no exista una parada de la linea 60
+SELECT stop_id
+FROM ramal_por_parada 
+WHERE linea = 60
+AND not exists (
+		SELECT 1
+		FROM ramal_por_parada r
+		WHERE linea =  60
+		AND NOT EXISTS (
+				SELECT 1 
+				FROM ramal_por_parada p
+				WHERE linea = 60
+				AND r.stop_id = p.stop_id				
+		      		)
+		)
+
+
+
+
+		SELECT stop_id
+FROM ramal_por_parada
+WHERE linea = 60 EXCEPT
+		(SELECT stop_id
+FROM ramal_por_parada 
+WHERE linea = 60
+AND not exists (
+		SELECT 1
+		FROM ramal_por_parada r
+		WHERE linea =  60
+		AND NOT EXISTS (
+				SELECT 1 
+				FROM ramal_por_parada p
+				WHERE linea = 60
+				AND r.stop_id = p.stop_id				
+		      		)
+		))
+
+
+
+
+
+
+
+
+
+

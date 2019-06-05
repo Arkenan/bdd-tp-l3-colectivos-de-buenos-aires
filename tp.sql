@@ -19,6 +19,10 @@ FROM '/home/jazminferreiro/jaz/fiuba/baseDeDatos/tp/bdd-tp/datasets/paradas-de-c
 DELIMITER ','
 CSV HEADER;
 
+select * from paradas_raw limit 4
+
+select* from paradas_raw where id_parada=20427
+
 drop table lineas_raw;
 create table lineas_raw (
 	linea int not null,
@@ -41,15 +45,15 @@ drop table paradas;
 -- Nosotros usaremos el orden inverso porque es el que esta en los linestring
 
 create table paradas as
-select p.id_parada, calle, altura, linea, latitud, longitud, ST_MakePoint(longitud, latitud) as point,
+select p.id_parada, calle, altura, dire, latitud, longitud, ST_MakePoint(longitud, latitud) as point,
 	Geography(
 		ST_Transform(
 			ST_SetSrid(ST_MakePoint(longitud, latitud),4326),
 			4326)
 		) as coords
 from paradas_raw p
-inner join lineas_raw l
-on p.id_parada = l.id_parada;
+
+select * from paradas limit 2;
 
 DROP FUNCTION IF EXISTS  paradas_cercanas;
 -- Devuelve las paradas a menos de max_distancia respecto de la parada_objetivo.
