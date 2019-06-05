@@ -38,10 +38,3 @@ select * from paradas_incompletas(60);
 
 -- Ejemplo: paradas del 130 por las cuales no pasan todos los ramales.
 select * from paradas_incompletas(130) order by id_parada;
-
-select distinct(ramal) from
-paradas_por_recorrido where linea = 130
-
-select * from 
-paradas_por_recorrido
-where id_parada = 1002111 and linea = 130
